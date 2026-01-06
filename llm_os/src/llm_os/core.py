@@ -22,9 +22,8 @@ from llm_os.mcp import (
     Tool,
     ToolResult,
 )
-from llm_os.mcp.orchestrator import OrchestratorConfig, ExternalServerSettings
+from llm_os.mcp.orchestrator import OrchestratorConfig
 from llm_os.mcp.orchestrator.security import SecurityPolicy
-from llm_os.mcp.client import ExternalServerConfig as ExtServerConfig
 
 
 logger = logging.getLogger(__name__)
@@ -35,37 +34,11 @@ DEFAULT_SYSTEM_PROMPT = """You are LLM-OS, an intelligent assistant integrated i
 You help users interact with their computer using natural language commands.
 
 You have access to various tools to perform system operations:
-
-**File Operations** (via MCP Filesystem Server):
-- Read, write, create, delete files and directories
-- Search for files and content
-- File information and permissions
-
-**Application Management**:
-- Launch and close applications
-- List installed and running applications
-
-**Process Control**:
-- Run shell commands
-- Manage background processes
-- Environment variables
-
-**System Information**:
-- CPU, memory, disk, network stats
-- Battery and power management
-- System logs and uptime
-
-**Version Control** (via MCP Git Server):
-- Git operations (status, commit, branch, etc.)
-- Repository management
-
-**Web Access** (via MCP Fetch Server):
-- Fetch web pages and APIs
-- Download content
-
-**Memory** (via MCP Memory Server):
-- Store and retrieve knowledge
-- Remember context across sessions
+- File operations (read, write, list, search)
+- Application management (launch, close)
+- Process control (run commands, manage processes)
+- System information (CPU, memory, disk, network)
+- Git version control
 
 When a user asks you to do something:
 1. Understand their intent
@@ -102,12 +75,6 @@ class LLMOSConfig:
     # MCP settings
     auto_start_servers: bool = True
     security_policy: SecurityPolicy = field(default_factory=SecurityPolicy)
-
-    # External MCP server settings
-    use_external_servers: bool = True  # Requires Node.js/npx
-    external_servers_enabled: list[str] = field(default_factory=lambda: [
-        "filesystem", "git", "fetch", "memory"
-    ])
 
     # UI settings
     show_tool_calls: bool = True
@@ -170,17 +137,10 @@ class LLMOS:
         self._llm_router = LLMRouter(config=router_config)
         await self._llm_router.initialize()
 
-        # Initialize MCP orchestrator with external server settings
-        external_settings = ExternalServerSettings(
-            enabled_official=self.config.external_servers_enabled if self.config.use_external_servers else [],
-            use_official_filesystem=self.config.use_external_servers and "filesystem" in self.config.external_servers_enabled,
-            use_official_git=self.config.use_external_servers and "git" in self.config.external_servers_enabled,
-        )
-
+        # Initialize MCP orchestrator
         orchestrator_config = OrchestratorConfig(
             auto_start_servers=self.config.auto_start_servers,
             security_policy=self.config.security_policy,
-            external_servers=external_settings,
         )
         self._mcp_orchestrator = MCPOrchestrator(
             config=orchestrator_config,

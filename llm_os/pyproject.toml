@@ -5,14 +5,14 @@ build-backend = "hatchling.build"
 [project]
 name = "llm-os"
 version = "0.1.0"
-description = "Natural Language Operating System - Control your computer with natural language. Supports official MCP servers (requires Node.js for external servers) and custom Python servers."
+description = "Natural Language Operating System - Control your computer with natural language"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.11"
 authors = [
     {name = "LLM-OS Team"}
 ]
-keywords = ["llm", "os", "natural-language", "mcp", "ai", "assistant", "model-context-protocol"]
+keywords = ["llm", "os", "natural-language", "mcp", "ai", "assistant"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",

@@ -72,34 +72,15 @@ class OpenAIConfig(LLMProviderConfig):
 
 
 @dataclass
-class ExternalServerConfig:
-    """Configuration for external MCP servers (stdio-based)."""
-    # Which official servers to enable
-    enabled_official: list[str] = field(default_factory=lambda: [
-        "filesystem", "git", "fetch", "memory"
-    ])
-    # Whether to use official servers instead of internal implementations
-    use_official_filesystem: bool = True
-    use_official_git: bool = True
-    # Custom external server configurations
-    custom_servers: list[dict[str, Any]] = field(default_factory=list)
-    # Global environment variables for all external servers
-    global_env: dict[str, str] = field(default_factory=dict)
-
-
-@dataclass
 class MCPConfig:
     """MCP server configuration."""
     auto_start: bool = True
     health_check_interval: float = 30.0
     auto_restart: bool = True
     max_restart_attempts: int = 3
-    # Internal Python servers to enable
     enabled_servers: list[str] = field(default_factory=lambda: [
-        "applications", "process", "system"
+        "filesystem", "applications", "process", "system", "git"
     ])
-    # External MCP server settings
-    external: ExternalServerConfig = field(default_factory=ExternalServerConfig)
 
 
 @dataclass
@@ -174,13 +155,6 @@ class Config:
             "mcp": {
                 "auto_start": self.mcp.auto_start,
                 "enabled_servers": self.mcp.enabled_servers,
-                "external": {
-                    "enabled_official": self.mcp.external.enabled_official,
-                    "use_official_filesystem": self.mcp.external.use_official_filesystem,
-                    "use_official_git": self.mcp.external.use_official_git,
-                    "custom_servers": self.mcp.external.custom_servers,
-                    "global_env": self.mcp.external.global_env,
-                },
             },
             "security": {
                 "require_confirmation_write": self.security.require_confirmation_write,
@@ -225,25 +199,6 @@ class Config:
             mcp_data = data["mcp"]
             config.mcp.auto_start = mcp_data.get("auto_start", True)
             config.mcp.enabled_servers = mcp_data.get("enabled_servers", config.mcp.enabled_servers)
-
-            # Handle external server config
-            if "external" in mcp_data:
-                ext_data = mcp_data["external"]
-                config.mcp.external.enabled_official = ext_data.get(
-                    "enabled_official", config.mcp.external.enabled_official
-                )
-                config.mcp.external.use_official_filesystem = ext_data.get(
-                    "use_official_filesystem", config.mcp.external.use_official_filesystem
-                )
-                config.mcp.external.use_official_git = ext_data.get(
-                    "use_official_git", config.mcp.external.use_official_git
-                )
-                config.mcp.external.custom_servers = ext_data.get(
-                    "custom_servers", config.mcp.external.custom_servers
-                )
-                config.mcp.external.global_env = ext_data.get(
-                    "global_env", config.mcp.external.global_env
-                )
 
         if "security" in data:
             sec_data = data["security"]
