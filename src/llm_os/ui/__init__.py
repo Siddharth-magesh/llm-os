@@ -1,15 +1,15 @@
 """
-NL-Shell UI Module
+OSSARTH UI Module
 
-Provides the terminal user interface for LLM-OS using Textual.
+Provides the terminal user interface for OSSARTH using Textual.
 """
 
-from llm_os.ui.app import NLShellApp, run_app, ChatMessage, ChatDisplay, ChatInput
+from llm_os.ui.app import NLShellApp, run_app, HeaderBar, OutputArea, InputBar
 
 __all__ = [
     "NLShellApp",
     "run_app",
-    "ChatMessage",
-    "ChatDisplay",
-    "ChatInput",
+    "HeaderBar",
+    "OutputArea",
+    "InputBar",
 ]

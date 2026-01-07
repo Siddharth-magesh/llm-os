@@ -1,173 +1,195 @@
 """
-LLM-OS Terminal UI - Clean Implementation
-
-Based on working simple_app.py pattern.
+OSSARTH Terminal UI - Redesigned based on Claude Code style
 """
-
 from __future__ import annotations
 
-import asyncio
+import platform
 from typing import Any, Callable, Coroutine
 from rich.console import RenderableType
-from rich.markdown import Markdown
+from rich.text import Text
 from rich.panel import Panel
+from rich.columns import Columns
+from rich.align import Align
 
 from textual.app import App, ComposeResult
-from textual.containers import ScrollableContainer
-from textual.widgets import Static, Input, Footer, Header
+from textual.containers import Container, Vertical, ScrollableContainer
+from textual.widgets import Static, Input
 from textual.binding import Binding
 
 
-class ChatMessage(Static):
-    """A single chat message widget."""
+class HeaderBar(Static):
+    """Clean header bar like Claude Code."""
 
-    def __init__(self, content: str, is_user: bool = False) -> None:
-        """Initialize message."""
+    def __init__(self, provider: str = "Unknown", model: str = "Unknown") -> None:
         super().__init__()
-        self.content = content
-        self.is_user = is_user
+        self.provider = provider
+        self.model = model
 
     def render(self) -> RenderableType:
-        """Render the message."""
-        style = "bold cyan" if self.is_user else "green"
-        label = "You" if self.is_user else "Assistant"
-
-        return Panel(
-            Markdown(self.content) if not self.is_user else self.content,
-            title=f"[{style}]{label}[/{style}]",
-            border_style=style,
+        """Render header with left and right sections."""
+        # Left side - Logo and branding
+        left = Text.from_markup(
+            f"[bold cyan]OSSARTH[/] [dim]v0.1.0[/]\n"
+            f"[dim]Natural Language Operating System[/]"
         )
 
+        # Right side - Configuration
+        right = Text.from_markup(
+            f"[bold]Configuration[/]\n"
+            f"Provider: [cyan]{self.provider}[/]\n"
+            f"Model: [cyan]{self.model}[/]\n"
+            f"Status: [green]Ready[/]\n"
+            f"OS: [white]{platform.system()} {platform.release()}[/]"
+        )
 
-class ChatDisplay(ScrollableContainer):
-    """Scrollable chat message display."""
+        # Create columns for side-by-side layout
+        return Columns([left, right], expand=True, padding=(0, 2))
+
+
+class OutputArea(ScrollableContainer):
+    """Output area with automatic scrolling."""
 
     DEFAULT_CSS = """
-    ChatDisplay {
+    OutputArea {
         height: 1fr;
-        border: solid green;
-        padding: 1;
+        padding: 0 2;
+        background: #1e1e1e;
     }
 
-    ChatMessage {
-        margin: 1;
+    OutputArea > Static {
+        margin-bottom: 1;
     }
     """
 
-    def add_message(self, content: str, is_user: bool = False) -> None:
-        """Add a message to the display."""
-        message = ChatMessage(content, is_user)
-        self.mount(message)
+    def add_line(self, content: str, role: str = "assistant") -> None:
+        """Add a line to output."""
+        widget = Static()
+
+        if role == "user":
+            widget.update(Text(f"❯ {content}", style="bold #5a9ac5"))
+        elif role == "system":
+            widget.update(Text(content, style="#d0d0d0"))
+        elif role == "error":
+            widget.update(Text(f"✗ {content}", style="bold red"))
+        else:
+            # Assistant output
+            widget.update(Text(content, style="#e0e0e0"))
+
+        self.mount(widget)
         self.scroll_end(animate=False)
 
-    def update_last_message(self, content: str) -> None:
-        """Update the last message (for streaming)."""
+    def update_last_line(self, content: str) -> None:
+        """Update last line for streaming."""
         if self.children:
-            last_message = self.children[-1]
-            if isinstance(last_message, ChatMessage):
-                last_message.content = content
-                last_message.refresh()
+            last = self.children[-1]
+            if isinstance(last, Static):
+                last.update(Text(content, style="#e0e0e0"))
 
 
-class ChatInput(Input):
-    """Custom input widget for chat."""
+class InputBar(Static):
+    """Input bar container."""
 
     DEFAULT_CSS = """
-    ChatInput {
-        dock: bottom;
-        border: solid cyan;
+    InputBar {
         height: 3;
-        padding: 0 1;
+        dock: bottom;
+        background: #1e1e1e;
+        padding: 0 2;
     }
     """
+
+    def compose(self) -> ComposeResult:
+        """Create input widget."""
+        yield Input(placeholder="❯ Type your command...", id="prompt")
 
 
 class NLShellApp(App):
-    """LLM-OS Natural Language Shell - Terminal UI."""
+    """OSSARTH - Natural Language OS Interface"""
 
-    TITLE = "LLM-OS"
-    SUB_TITLE = "Natural Language Shell"
-
-    # Disable command palette
-    ENABLE_COMMAND_PALETTE = False
+    TITLE = "OSSARTH"
 
     CSS = """
     Screen {
-        background: $background;
+        background: #1e1e1e;
     }
 
-    Header {
-        background: $primary;
+    HeaderBar {
+        height: auto;
+        padding: 1 2;
+        background: #1e1e1e;
+        border-bottom: solid #2a4a6a;
+        margin-bottom: 1;
     }
 
-    Footer {
-        background: $primary;
+    OutputArea {
+        background: #1e1e1e;
+    }
+
+    InputBar {
+        background: #1e1e1e;
+        border-top: solid #2a4a6a;
+    }
+
+    Input {
+        height: 1;
+        background: #1e1e1e;
+        border: none;
+        padding: 0;
+        color: #ffffff;
+    }
+
+    Input:focus {
+        border: none;
+        background: #1e1e1e;
+    }
+
+    Input > .input--placeholder {
+        color: #808080;
+    }
+
+    Static {
+        color: #e0e0e0;
     }
     """
 
     BINDINGS = [
-        Binding("ctrl+c", "quit", "Quit", show=True),
+        Binding("ctrl+c", "quit", "Quit", show=False),
         Binding("ctrl+d", "quit", "Quit", show=False),
-        Binding("ctrl+l", "clear", "Clear", show=True),
-        Binding("f1", "help", "Help", show=True),
-        Binding("f2", "status", "Status", show=True),
+        Binding("ctrl+l", "clear", "Clear", show=False),
     ]
 
     def __init__(
         self,
         message_handler: Callable[[str], Coroutine[Any, Any, str]] | None = None,
         stream_handler: Any | None = None,
-        confirmation_handler: Any | None = None,
+        provider: str = "Unknown",
+        model: str = "Unknown",
         **kwargs: Any,
     ) -> None:
-        """Initialize app."""
+        """Initialize OSSARTH."""
         super().__init__(**kwargs)
         self._message_handler = message_handler
         self._stream_handler = stream_handler
-        self._confirmation_handler = confirmation_handler
         self._processing = False
-        self._provider = "Not connected"
-        self._model = ""
-        self._tool_count = 0
+        self._provider = provider
+        self._model = model
 
     def compose(self) -> ComposeResult:
-        """Create child widgets."""
-        yield Header()
-        yield ChatDisplay(id="chat")
-        yield ChatInput(placeholder="Type your message here...", id="input")
-        yield Footer()
+        """Create UI components."""
+        yield HeaderBar(provider=self._provider, model=self._model)
+        yield OutputArea(id="output")
+        yield InputBar()
 
     def on_mount(self) -> None:
-        """Handle mount event."""
-        # Add welcome message
-        chat = self.query_one("#chat", ChatDisplay)
-        welcome = """# Welcome to LLM-OS!
-
-**Natural Language Operating System**
-
-Type a message below to control your system with natural language.
-
-## Keyboard Shortcuts
-- **Ctrl+C** / **Ctrl+D** - Quit
-- **Ctrl+L** - Clear chat
-- **F1** - Help
-- **F2** - Status
-
-## Slash Commands
-- `/help` - Show help
-- `/clear` - Clear chat
-- `/status` - Show status
-- `/quit` - Exit
-
-Try: "list files" or "show system info"
-"""
-        chat.add_message(welcome)
+        """Show startup message."""
+        output = self.query_one("#output", OutputArea)
+        output.add_line("Type your command or /help for assistance.\n", "system")
 
         # Focus input
-        self.query_one("#input", ChatInput).focus()
+        self.set_timer(0.1, lambda: self.query_one("#prompt", Input).focus())
 
     async def on_input_submitted(self, event: Input.Submitted) -> None:
-        """Handle input submission."""
+        """Handle command submission."""
         if self._processing:
             return
 
@@ -178,14 +200,14 @@ Try: "list files" or "show system info"
         # Clear input
         event.input.value = ""
 
+        # Show user input
+        output = self.query_one("#output", OutputArea)
+        output.add_line(message, "user")
+
         # Handle commands
         if message.startswith("/"):
             await self._handle_command(message)
             return
-
-        # Add user message
-        chat = self.query_one("#chat", ChatDisplay)
-        chat.add_message(message, is_user=True)
 
         # Process message
         await self._process_message(message)
@@ -193,140 +215,93 @@ Try: "list files" or "show system info"
     async def _process_message(self, message: str) -> None:
         """Process user message."""
         self._processing = True
-        chat = self.query_one("#chat", ChatDisplay)
+        output = self.query_one("#output", OutputArea)
 
         try:
             if self._stream_handler:
                 # Streaming response
                 response = ""
-                # Add placeholder
-                chat.add_message("")
+                output.add_line("")  # Placeholder
                 async for chunk in self._stream_handler(message):
                     response += chunk
-                    chat.update_last_message(response)
+                    output.update_last_line(response)
             elif self._message_handler:
                 # Non-streaming response
                 response = await self._message_handler(message)
-                chat.add_message(response)
+                output.add_line(response)
             else:
-                # Echo mode (for testing)
-                chat.add_message(f"**Echo:** {message}\n\nThis is echo mode. No LLM handler configured.")
+                output.add_line("No backend configured.", "error")
         except Exception as e:
-            chat.add_message(f"**Error:** {str(e)}")
+            output.add_line(f"Error: {str(e)}", "error")
         finally:
+            output.add_line("", "system")  # Spacing
             self._processing = False
-            # Re-focus input
-            self.query_one("#input", ChatInput).focus()
+            self.query_one("#prompt", Input).focus()
 
     async def _handle_command(self, cmd: str) -> None:
         """Handle slash commands."""
-        chat = self.query_one("#chat", ChatDisplay)
+        output = self.query_one("#output", OutputArea)
         cmd_lower = cmd.lower()
 
-        if cmd_lower in ("/help", "/h", "/?"):
-            await self.action_help()
+        if cmd_lower in ("/help", "/h"):
+            help_text = """Available Commands:
+  /help   - Show this help
+  /clear  - Clear screen
+  /status - Show system status
+  /quit   - Exit OSSARTH
+
+Natural Language:
+  Just type what you want to do:
+  "list files" | "show system info" | "git status"
+
+Shortcuts: Ctrl+C/D=Quit | Ctrl+L=Clear"""
+            output.add_line(help_text, "system")
+
         elif cmd_lower in ("/clear", "/cls"):
-            await self.action_clear()
+            output.remove_children()
+            output.add_line("Screen cleared.\n", "system")
+
         elif cmd_lower in ("/status", "/s"):
-            await self.action_status()
+            status = f"""System Status:
+  Provider: {self._provider}
+  Model: {self._model}
+  Processing: {'Yes' if self._processing else 'No'}
+  Platform: {platform.system()} {platform.release()}"""
+            output.add_line(status, "system")
+
         elif cmd_lower in ("/quit", "/exit", "/q"):
             self.exit()
+
         else:
-            chat.add_message(f"Unknown command: `{cmd}`\n\nTry `/help` for available commands.")
+            output.add_line(f"Unknown command: {cmd}", "error")
+            output.add_line("Type /help for available commands.", "system")
+
+        output.add_line("", "system")
 
     def action_clear(self) -> None:
-        """Clear chat."""
-        chat = self.query_one("#chat", ChatDisplay)
-        chat.remove_children()
-        chat.add_message("**Chat cleared.**")
-
-    def action_help(self) -> None:
-        """Show help."""
-        chat = self.query_one("#chat", ChatDisplay)
-        help_text = """# LLM-OS Help
-
-## Natural Language Commands
-Just type what you want to do:
-- "list files in the current directory"
-- "show system information"
-- "what's the git status?"
-- "find all python files"
-
-## Slash Commands
-- `/help` or `/h` - Show this help
-- `/clear` or `/cls` - Clear chat history
-- `/status` or `/s` - Show system status
-- `/quit` or `/q` - Exit application
-
-## Keyboard Shortcuts
-- **Ctrl+C** / **Ctrl+D** - Quit
-- **Ctrl+L** - Clear chat
-- **F1** - Help
-- **F2** - Status
-
-## Examples
-```
-"list files"
-"show system info"
-"what branch am I on?"
-"find all .py files and show git status"
-```
-
-Type naturally and let the AI handle it!
-"""
-        chat.add_message(help_text)
-
-    def action_status(self) -> None:
-        """Show status."""
-        chat = self.query_one("#chat", ChatDisplay)
-        status_text = f"""# System Status
-
-- **Provider:** {self._provider}
-- **Model:** {self._model or 'Not set'}
-- **Tools Available:** {self._tool_count}
-- **Processing:** {'Yes' if self._processing else 'No'}
-"""
-        chat.add_message(status_text)
-
-    def update_status(
-        self,
-        provider: str | None = None,
-        model: str | None = None,
-        tool_count: int | None = None,
-    ) -> None:
-        """Update status information."""
-        if provider is not None:
-            self._provider = provider
-        if model is not None:
-            self._model = model
-        if tool_count is not None:
-            self._tool_count = tool_count
-
-    def show_tool_progress(self, tool_name: str) -> None:
-        """Show tool execution progress."""
-        # For now, just add a message
-        # Can be enhanced later with a progress widget
-        pass
-
-    def hide_tool_progress(self, success: bool = True) -> None:
-        """Hide tool execution progress."""
-        pass
+        """Clear screen."""
+        output = self.query_one("#output", OutputArea)
+        output.remove_children()
+        output.add_line("Screen cleared.\n", "system")
 
 
 def run_app(
     message_handler: Any | None = None,
     stream_handler: Any | None = None,
+    provider: str = "Unknown",
+    model: str = "Unknown",
     **kwargs: Any,
 ) -> None:
-    """Run the NL-Shell application."""
+    """Run OSSARTH application."""
     app = NLShellApp(
         message_handler=message_handler,
         stream_handler=stream_handler,
+        provider=provider,
+        model=model,
         **kwargs
     )
     app.run()
 
 
 if __name__ == "__main__":
-    # Demo mode with echo
     run_app()
