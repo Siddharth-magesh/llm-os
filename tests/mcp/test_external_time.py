@@ -27,23 +27,19 @@ async def test_time_server():
     )
 
     try:
-        # Start server
-        await client.start()
-        print("✓ Server started successfully")
-        print()
-
-        # Initialize connection
+        # Initialize connection (also starts server)
         print("Initializing connection...")
-        server_info = await client.initialize(
+        await client.initialize(
             client_info={"name": "OSSARTH Test", "version": "0.1.0"}
         )
-        print(f"✓ Server Name: {server_info.get('serverInfo', {}).get('name', 'Unknown')}")
-        print(f"✓ Server Version: {server_info.get('serverInfo', {}).get('version', 'Unknown')}")
+        print("✓ Server started and initialized successfully")
+        print(f"✓ Server Name: {client._server_info.get('name', 'Unknown')}")
+        print(f"✓ Server Version: {client._server_info.get('version', 'Unknown')}")
         print()
 
         # List available tools
         print("Fetching available tools...")
-        tools = await client.list_tools()
+        tools = client.tools
         print(f"✓ Tools Available ({len(tools)}):")
         for tool in tools:
             print(f"  - {tool.name}: {tool.description}")
@@ -79,7 +75,7 @@ async def test_time_server():
     finally:
         # Cleanup
         print("\nStopping server...")
-        await client.stop()
+        await client.close()
         print("✓ Server stopped")
 
 
