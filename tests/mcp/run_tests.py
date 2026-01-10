@@ -59,6 +59,7 @@ def main():
     if node_check.returncode == 0:
         print(f"\n[OK] Node.js found: {node_check.stdout.strip()}")
         tests.extend([
+            ("Filesystem Server", "tests/test_filesystem_external.py"),
             ("Memory Server", "tests/test_memory_server.py"),
             ("Sequential Thinking", "tests/test_sequential_thinking.py"),
             ("Combined Servers", "tests/test_combined.py"),
