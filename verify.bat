@@ -3,7 +3,7 @@ REM Quick verification that everything works
 
 setlocal
 
-set GROQ_API_KEY=your_groq_api_key_here
+set GROQ_API_KEY=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
 
 call "%USERPROFILE%\miniconda3\Scripts\activate.bat" >nul 2>&1
 call conda activate llm-os >nul 2>&1

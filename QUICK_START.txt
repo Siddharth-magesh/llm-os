@@ -2,76 +2,77 @@
   LLM-OS Quick Start Guide
 ====================================
 
-ALL ISSUES FIXED:
-- Groq + Ollama integration ✓
-- Asyncio event loop ✓
-- Conda environment ✓
-- MCP filesystem tools ✓
-- LLM tool usage ✓
-- System prompt optimized ✓
-
-====================================
-QUICK TEST:
+LAUNCH OPTIONS:
 ====================================
 
-verify.bat
-
-Expected output:
-- Version: llm-os 0.1.0
-- Groq responds
-- File list appears
-
-====================================
-LAUNCH:
-====================================
-
-TUI Mode (recommended):
+Auto (Groq with Ollama fallback):
   launch.bat
 
-CLI Mode:
-  python -m llm_os --no-ui
+Groq only (cloud, fast):
+  launch_groq.bat
+
+Ollama only (local, private):
+  launch_ollama.bat
 
 ====================================
-WHAT'S WORKING:
+VERIFY INSTALLATION:
 ====================================
 
-✓ Groq LLM (llama-3.3-70b)
+Run tests:
+  tests\run_tests.bat
+
+Quick check:
+  verify.bat
+
+====================================
+PROVIDERS:
+====================================
+
+Groq (Cloud):
+  - Model: llama-3.3-70b-versatile
+  - Speed: ~100-200ms latency
+  - Status: WORKING ✓
+
+Ollama (Local):
+  - Model: llama3.2:3b
+  - Speed: Depends on hardware
+  - Status: Available (if installed)
+
+====================================
+FEATURES:
+====================================
+
 ✓ 14 Filesystem MCP tools
 ✓ Tool calling (no hallucination)
 ✓ Read/write/list files
 ✓ Directory operations
 ✓ File search
+✓ Provider selection
 
 ====================================
-EXAMPLE COMMANDS:
+USAGE:
 ====================================
 
-"list all files"
-"read README.md"
-"create a folder called test"
-"search for all .py files"
-"what's in the src directory"
+Commands:
+  "list all files"
+  "read QUICK_START.txt"
+  "create a folder called test"
+  "search for .py files"
+
+CLI options:
+  --provider groq     Use Groq
+  --provider ollama   Use Ollama
+  --no-ui             CLI mode (no TUI)
+  -c "command"        Single command
 
 ====================================
-SYSTEM:
+FILES:
 ====================================
 
-Provider: Groq (cloud)
-Fallback: Ollama (local)
-Tools: Filesystem MCP
-Environment: conda llm-os
-Working Dir: D:\llm-os
-
-====================================
-IMPORTANT NOTE:
-====================================
-
-If file listings show old/deleted
-files, restart LLM-OS:
-
-1. Press Ctrl+C to exit
-2. Run launch.bat again
-
-This refreshes the filesystem cache.
+launch.bat          Auto mode
+launch_groq.bat     Groq only
+launch_ollama.bat   Ollama only
+verify.bat          Quick test
+tests/              Test scripts
 
 ====================================
