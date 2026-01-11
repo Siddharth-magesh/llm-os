@@ -26,8 +26,7 @@ from llm_os.llm.base import (
 )
 from llm_os.llm.classifier import TaskClassifier, TaskType, ClassificationResult
 from llm_os.llm.providers.ollama import OllamaProvider
-from llm_os.llm.providers.anthropic import AnthropicProvider
-from llm_os.llm.providers.openai import OpenAIProvider
+from llm_os.llm.providers.groq import GroqProvider
 
 
 logger = logging.getLogger(__name__)
@@ -37,12 +36,13 @@ logger = logging.getLogger(__name__)
 class RouterConfig:
     """Configuration for the LLM router."""
     default_provider: str = "ollama"
-    fallback_chain: list[str] = field(default_factory=lambda: ["ollama", "anthropic", "openai"])
+    fallback_chain: list[str] = field(default_factory=lambda: ["ollama", "groq"])
     local_first: bool = True
     cost_optimization: bool = True
     max_retries: int = 3
     retry_delay: float = 1.0
     timeout: float = 120.0
+    groq_api_key: str | None = None
 
 
 @dataclass
@@ -93,29 +93,34 @@ class LLMRouter:
         if self._initialized:
             return
 
-        # Initialize Ollama (local)
+        # Initialize Ollama (local - FREE)
         if "ollama" not in self._providers:
-            ollama = OllamaProvider()
-            if await ollama.check_health():
-                self._providers["ollama"] = ollama
-                logger.info("Ollama provider initialized")
+            try:
+                ollama = OllamaProvider()
+                if await ollama.check_health():
+                    self._providers["ollama"] = ollama
+                    logger.info("Ollama provider initialized")
+                else:
+                    logger.warning("Ollama not running or not healthy")
+            except Exception as e:
+                logger.warning(f"Failed to initialize Ollama: {e}")
 
-        # Initialize Anthropic (if API key available)
-        if "anthropic" not in self._providers and os.environ.get("ANTHROPIC_API_KEY"):
-            anthropic = AnthropicProvider()
-            self._providers["anthropic"] = anthropic
-            logger.info("Anthropic provider initialized")
-
-        # Initialize OpenAI (if API key available)
-        if "openai" not in self._providers and os.environ.get("OPENAI_API_KEY"):
-            openai = OpenAIProvider()
-            self._providers["openai"] = openai
-            logger.info("OpenAI provider initialized")
+        # Initialize Groq (cloud - FAST)
+        groq_key = self.config.groq_api_key or os.environ.get("GROQ_API_KEY")
+        if "groq" not in self._providers and groq_key:
+            try:
+                groq = GroqProvider(api_key=groq_key)
+                self._providers["groq"] = groq
+                logger.info("Groq provider initialized")
+            except Exception as e:
+                logger.warning(f"Failed to initialize Groq: {e}")
 
         self._initialized = True
 
         if not self._providers:
-            logger.warning("No LLM providers available!")
+            logger.error("No LLM providers available! Install Ollama or set GROQ_API_KEY")
+        else:
+            logger.info(f"Initialized providers: {', '.join(self._providers.keys())}")
 
     async def close(self) -> None:
         """Close all provider connections."""

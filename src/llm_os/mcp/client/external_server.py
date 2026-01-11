@@ -42,136 +42,21 @@ class ExternalServerConfig:
     enabled: bool = True
 
 
-# Pre-defined configurations for official MCP servers
+# Pre-defined configurations for MCP servers
 OFFICIAL_SERVERS: dict[str, ExternalServerConfig] = {
     "filesystem": ExternalServerConfig(
         server_id="mcp-filesystem",
-        name="MCP Filesystem Server",
-        description="Official MCP server for filesystem operations",
-        command="npx",
-        args=["-y", "@modelcontextprotocol/server-filesystem", "/"],
+        name="OSSARTH Filesystem Server",
+        description="Local filesystem server with OSSARTH customizations",
+        command="node",
+        args=[
+            str(Path(__file__).parent.parent / "external-servers" / "filesystem" / "dist" / "index.js"),
+            str(Path.cwd())  # Allow current working directory
+        ],
         env={},
     ),
-    "git": ExternalServerConfig(
-        server_id="mcp-git",
-        name="MCP Git Server",
-        description="Official MCP server for Git operations",
-        command="npx",
-        args=["-y", "@modelcontextprotocol/server-git"],
-        env={},
-    ),
-    "fetch": ExternalServerConfig(
-        server_id="mcp-fetch",
-        name="MCP Fetch Server",
-        description="Official MCP server for web fetching",
-        command="npx",
-        args=["-y", "@modelcontextprotocol/server-fetch"],
-        env={},
-    ),
-    "memory": ExternalServerConfig(
-        server_id="mcp-memory",
-        name="MCP Memory Server",
-        description="Official MCP server for knowledge graph memory",
-        command="npx",
-        args=["-y", "@modelcontextprotocol/server-memory"],
-        env={},
-    ),
-    "sequential-thinking": ExternalServerConfig(
-        server_id="mcp-sequential-thinking",
-        name="MCP Sequential Thinking Server",
-        description="Official MCP server for structured reasoning",
-        command="npx",
-        args=["-y", "@modelcontextprotocol/server-sequential-thinking"],
-        env={},
-    ),
-    "time": ExternalServerConfig(
-        server_id="mcp-time",
-        name="MCP Time Server",
-        description="Official MCP server for time and timezone operations",
-        command="npx",
-        args=["-y", "@modelcontextprotocol/server-time"],
-        env={},
-    ),
-    "puppeteer": ExternalServerConfig(
-        server_id="mcp-puppeteer",
-        name="MCP Puppeteer Server",
-        description="Official MCP server for browser automation",
-        command="npx",
-        args=["-y", "@modelcontextprotocol/server-puppeteer"],
-        env={},
-    ),
-    "brave-search": ExternalServerConfig(
-        server_id="mcp-brave-search",
-        name="MCP Brave Search Server",
-        description="Official MCP server for Brave web search",
-        command="npx",
-        args=["-y", "@modelcontextprotocol/server-brave-search"],
-        env={},  # Requires BRAVE_API_KEY
-    ),
-    "google-maps": ExternalServerConfig(
-        server_id="mcp-google-maps",
-        name="MCP Google Maps Server",
-        description="Official MCP server for Google Maps",
-        command="npx",
-        args=["-y", "@modelcontextprotocol/server-google-maps"],
-        env={},  # Requires GOOGLE_MAPS_API_KEY
-    ),
-    "sqlite": ExternalServerConfig(
-        server_id="mcp-sqlite",
-        name="MCP SQLite Server",
-        description="Official MCP server for SQLite database operations",
-        command="npx",
-        args=["-y", "@modelcontextprotocol/server-sqlite"],
-        env={},
-    ),
-    "postgres": ExternalServerConfig(
-        server_id="mcp-postgres",
-        name="MCP PostgreSQL Server",
-        description="Official MCP server for PostgreSQL database",
-        command="npx",
-        args=["-y", "@modelcontextprotocol/server-postgres"],
-        env={},  # Requires POSTGRES_CONNECTION_STRING
-    ),
-    "slack": ExternalServerConfig(
-        server_id="mcp-slack",
-        name="MCP Slack Server",
-        description="Official MCP server for Slack integration",
-        command="npx",
-        args=["-y", "@modelcontextprotocol/server-slack"],
-        env={},  # Requires SLACK_BOT_TOKEN
-    ),
-    "github": ExternalServerConfig(
-        server_id="mcp-github",
-        name="MCP GitHub Server",
-        description="Official MCP server for GitHub API",
-        command="npx",
-        args=["-y", "@modelcontextprotocol/server-github"],
-        env={},  # Requires GITHUB_PERSONAL_ACCESS_TOKEN
-    ),
-    "gitlab": ExternalServerConfig(
-        server_id="mcp-gitlab",
-        name="MCP GitLab Server",
-        description="Official MCP server for GitLab API",
-        command="npx",
-        args=["-y", "@modelcontextprotocol/server-gitlab"],
-        env={},  # Requires GITLAB_PERSONAL_ACCESS_TOKEN
-    ),
-    "sentry": ExternalServerConfig(
-        server_id="mcp-sentry",
-        name="MCP Sentry Server",
-        description="Official MCP server for Sentry error tracking",
-        command="npx",
-        args=["-y", "@modelcontextprotocol/server-sentry"],
-        env={},  # Requires SENTRY_AUTH_TOKEN
-    ),
-    "everart": ExternalServerConfig(
-        server_id="mcp-everart",
-        name="MCP EverArt Server",
-        description="Official MCP server for EverArt image generation",
-        command="npx",
-        args=["-y", "@modelcontextprotocol/server-everart"],
-        env={},  # Requires EVERART_API_KEY
-    ),
+    # Additional external servers can be added here as needed
+    # For now, we only use the local filesystem server
 }
 
 

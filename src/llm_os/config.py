@@ -48,6 +48,19 @@ class OllamaConfig(LLMProviderConfig):
 
 
 @dataclass
+class GroqConfig(LLMProviderConfig):
+    """Groq-specific configuration."""
+    api_key: str = ""  # Set via GROQ_API_KEY environment variable
+    base_url: str = "https://api.groq.com/openai/v1"
+    default_model: str = "llama-3.3-70b-versatile"
+    models: dict[str, str] = field(default_factory=lambda: {
+        "fast": "llama-3.1-8b-instant",
+        "default": "llama-3.3-70b-versatile",  # Best balance
+        "best": "llama-3.3-70b-versatile",
+    })
+
+
+@dataclass
 class AnthropicConfig(LLMProviderConfig):
     """Anthropic-specific configuration."""
     default_model: str = "claude-3-5-haiku-latest"
@@ -129,10 +142,9 @@ class UIConfig:
 @dataclass
 class Config:
     """Main LLM-OS configuration."""
-    # LLM providers
+    # LLM providers (Ollama + Groq only)
     ollama: OllamaConfig = field(default_factory=OllamaConfig)
-    anthropic: AnthropicConfig = field(default_factory=AnthropicConfig)
-    openai: OpenAIConfig = field(default_factory=OpenAIConfig)
+    groq: GroqConfig = field(default_factory=GroqConfig)
 
     # Default provider
     default_provider: str = "ollama"
@@ -163,13 +175,10 @@ class Config:
                 "base_url": self.ollama.base_url,
                 "default_model": self.ollama.default_model,
             },
-            "anthropic": {
-                "enabled": self.anthropic.enabled,
-                "default_model": self.anthropic.default_model,
-            },
-            "openai": {
-                "enabled": self.openai.enabled,
-                "default_model": self.openai.default_model,
+            "groq": {
+                "enabled": self.groq.enabled,
+                "api_key": self.groq.api_key,
+                "default_model": self.groq.default_model,
             },
             "mcp": {
                 "auto_start": self.mcp.auto_start,
@@ -204,17 +213,11 @@ class Config:
             config.ollama.base_url = ollama_data.get("base_url", config.ollama.base_url)
             config.ollama.default_model = ollama_data.get("default_model", config.ollama.default_model)
 
-        if "anthropic" in data:
-            anthropic_data = data["anthropic"]
-            config.anthropic.enabled = anthropic_data.get("enabled", True)
-            config.anthropic.api_key = anthropic_data.get("api_key", "")
-            config.anthropic.default_model = anthropic_data.get("default_model", config.anthropic.default_model)
-
-        if "openai" in data:
-            openai_data = data["openai"]
-            config.openai.enabled = openai_data.get("enabled", True)
-            config.openai.api_key = openai_data.get("api_key", "")
-            config.openai.default_model = openai_data.get("default_model", config.openai.default_model)
+        if "groq" in data:
+            groq_data = data["groq"]
+            config.groq.enabled = groq_data.get("enabled", True)
+            config.groq.api_key = groq_data.get("api_key", "")
+            config.groq.default_model = groq_data.get("default_model", config.groq.default_model)
 
         # Update other configs
         config.default_provider = data.get("default_provider", config.default_provider)
@@ -313,13 +316,9 @@ def load_config(config_path: Path | str | None = None) -> Config:
 def _apply_env_overrides(config: Config) -> Config:
     """Apply environment variable overrides."""
     # API keys
-    if api_key := os.environ.get("ANTHROPIC_API_KEY"):
-        config.anthropic.api_key = api_key
-        config.anthropic.enabled = True
-
-    if api_key := os.environ.get("OPENAI_API_KEY"):
-        config.openai.api_key = api_key
-        config.openai.enabled = True
+    if api_key := os.environ.get("GROQ_API_KEY"):
+        config.groq.api_key = api_key
+        config.groq.enabled = True
 
     # Ollama
     if base_url := os.environ.get("OLLAMA_BASE_URL"):

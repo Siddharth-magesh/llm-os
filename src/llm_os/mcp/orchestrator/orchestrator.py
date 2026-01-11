@@ -23,7 +23,11 @@ from llm_os.mcp.orchestrator.security import (
 )
 from llm_os.mcp.orchestrator.server_manager import ServerManager, ServerRegistry
 from llm_os.mcp.orchestrator.tool_router import ToolRouter, ToolDispatcher, RouterConfig
-from llm_os.mcp.servers.base import BaseMCPServer
+# Temporarily using external servers only
+# from llm_os.mcp._archived_servers.base import BaseMCPServer
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from llm_os.mcp._archived_servers.base import BaseMCPServer
 from llm_os.mcp.types.tools import Tool, ToolCall, ToolResult
 from llm_os.mcp.types.server import ServerInfo
 from llm_os.mcp.client.external_server import (

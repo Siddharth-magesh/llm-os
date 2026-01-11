@@ -1,0 +1,77 @@
+====================================
+  LLM-OS Quick Start Guide
+====================================
+
+ALL ISSUES FIXED:
+- Groq + Ollama integration ✓
+- Asyncio event loop ✓
+- Conda environment ✓
+- MCP filesystem tools ✓
+- LLM tool usage ✓
+- System prompt optimized ✓
+
+====================================
+QUICK TEST:
+====================================
+
+verify.bat
+
+Expected output:
+- Version: llm-os 0.1.0
+- Groq responds
+- File list appears
+
+====================================
+LAUNCH:
+====================================
+
+TUI Mode (recommended):
+  launch.bat
+
+CLI Mode:
+  python -m llm_os --no-ui
+
+====================================
+WHAT'S WORKING:
+====================================
+
+✓ Groq LLM (llama-3.3-70b)
+✓ 14 Filesystem MCP tools
+✓ Tool calling (no hallucination)
+✓ Read/write/list files
+✓ Directory operations
+✓ File search
+
+====================================
+EXAMPLE COMMANDS:
+====================================
+
+"list all files"
+"read README.md"
+"create a folder called test"
+"search for all .py files"
+"what's in the src directory"
+
+====================================
+SYSTEM:
+====================================
+
+Provider: Groq (cloud)
+Fallback: Ollama (local)
+Tools: Filesystem MCP
+Environment: conda llm-os
+Working Dir: D:\llm-os
+
+====================================
+IMPORTANT NOTE:
+====================================
+
+If file listings show old/deleted
+files, restart LLM-OS:
+
+1. Press Ctrl+C to exit
+2. Run launch.bat again
+
+This refreshes the filesystem cache.
+
+====================================

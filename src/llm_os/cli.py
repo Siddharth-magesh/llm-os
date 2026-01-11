@@ -79,7 +79,7 @@ For more information, visit: https://github.com/llm-os/llm-os
     parser.add_argument(
         "-p", "--provider",
         type=str,
-        choices=["ollama", "anthropic", "openai"],
+        choices=["ollama", "groq"],
         help="LLM provider to use",
     )
 
@@ -228,6 +228,14 @@ async def run_tui(
     config: Config,
 ) -> None:
     """Run the TUI application."""
+    # Initialize LLMOS first
+    await llmos.initialize()
+
+    # Get provider and model info
+    status = llmos.get_status()
+    provider = status.get("provider", "Unknown")
+    model = status.get("model", "Unknown")
+
     async def message_handler(message: str) -> str:
         """Handle user messages (non-streaming fallback)."""
         return await llmos.process_message(message)
@@ -237,40 +245,13 @@ async def run_tui(
         async for chunk in llmos.stream_message(message):
             yield chunk
 
-    async def confirmation_handler(title: str, message: str) -> bool:
-        """Handle confirmations."""
-        # In TUI mode, this is handled by the app
-        return True
-
     # Create and configure app
     app = NLShellApp(
         message_handler=message_handler,
         stream_handler=stream_handler,
-        confirmation_handler=confirmation_handler,
+        provider=provider,
+        model=model,
     )
-
-    # Set up tool callback
-    async def tool_callback(name: str, status: str, success: bool = True) -> None:
-        if status == "starting":
-            app.show_tool_progress(name)
-        else:
-            app.hide_tool_progress(success)
-
-    llmos.set_tool_callback(tool_callback)
-
-    # Update status when initialized
-    async def update_status() -> None:
-        await asyncio.sleep(1)  # Wait for initialization
-        status = llmos.get_status()
-        app.update_status(
-            provider=status.get("provider", "Unknown"),
-            model=status.get("model", ""),
-            tool_count=len(llmos.available_tools),
-        )
-
-    # Initialize
-    await llmos.initialize()
-    await update_status()
 
     # Run the app asynchronously
     await app.run_async()
@@ -286,8 +267,7 @@ async def async_main(args: argparse.Namespace) -> int:
         config.default_provider = args.provider
 
     if args.local_only:
-        config.anthropic.enabled = False
-        config.openai.enabled = False
+        config.groq.enabled = False
         config.default_provider = "ollama"
 
     # Create LLM-OS config

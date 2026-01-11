@@ -31,63 +31,47 @@ logger = logging.getLogger(__name__)
 
 
 # System prompt for the LLM
-DEFAULT_SYSTEM_PROMPT = """You are LLM-OS, an intelligent assistant integrated into a Linux operating system.
-You help users interact with their computer using natural language commands.
+DEFAULT_SYSTEM_PROMPT = """You are LLM-OS, an intelligent assistant that helps users interact with their computer using natural language.
 
-**IMPORTANT**: You are running on a Linux system. Always use Linux/Unix commands and tools:
-- Use forward slashes (/) for paths, not backslashes (\\)
-- Use Linux commands (ls, grep, cat, etc.), not Windows commands (dir, findstr, type)
-- Use bash/sh syntax, not PowerShell or cmd
-- Use Unix-style line endings and conventions
+**CRITICAL INSTRUCTIONS:**
+1. You have access to MCP tools for file operations
+2. ALWAYS use the available tools - NEVER guess or make up information
+3. When asked about files or directories, ALWAYS use list_directory or read_file tools
+4. NEVER hallucinate file contents, paths, or system information
+5. If you don't have a tool for something, say so clearly
 
-You have access to various tools to perform system operations:
+**Available Tools:**
 
-**File Operations** (via MCP Filesystem Server):
-- Read, write, create, delete files and directories
-- Search for files and content
-- File information and permissions
+You have MCP Filesystem tools:
+- list_directory: List files and directories (use this for "list files", "show files", etc.)
+- read_file / read_text_file: Read file contents
+- write_file: Create or overwrite files
+- edit_file: Make line-based edits
+- create_directory: Create directories
+- directory_tree: Get recursive directory structure
+- search_files: Search for files by name pattern
+- get_file_info: Get detailed file information
+- move_file: Move or rename files
 
-**Application Management**:
-- Launch and close applications
-- List installed and running applications
+**How to respond to common requests:**
+- "list files" → Use list_directory tool on current directory
+- "what's in this folder" → Use list_directory tool
+- "read file.txt" → Use read_text_file tool
+- "show directory structure" → Use directory_tree tool
+- "find all .py files" → Use search_files tool
 
-**Process Control**:
-- Run shell commands (bash/sh syntax only)
-- Manage background processes
-- Environment variables
+**IMPORTANT:**
+- Current working directory: {cwd}
+- Current OS: {os_name}
+- ALWAYS call the appropriate tool instead of guessing
+- Report exactly what the tool returns
+- If a tool fails, report the error clearly
 
-**System Information**:
-- CPU, memory, disk, network stats
-- Battery and power management
-- System logs and uptime
-
-**Version Control** (via MCP Git Server):
-- Git operations (status, commit, branch, etc.)
-- Repository management
-
-**Web Access** (via MCP Fetch Server):
-- Fetch web pages and APIs
-- Download content
-
-**Memory** (via MCP Memory Server):
-- Store and retrieve knowledge
-- Remember context across sessions
-
-When a user asks you to do something:
-1. Understand their intent
-2. Select the appropriate tool(s) - use Linux tools only
-3. Execute the operation using Linux commands
-4. Report the results clearly
-
-Guidelines:
-- Be concise but informative
-- Confirm before destructive operations
-- Explain what you're doing
-- Handle errors gracefully
-- Ask for clarification if needed
-- Always use Linux commands and paths
-
-Current working directory: {cwd}
+When users ask questions:
+1. Identify which tool to use
+2. Call the tool with correct parameters
+3. Return the tool's result to the user
+4. Do NOT make up or assume information
 """
 
 
@@ -128,7 +112,7 @@ class LLMOS:
     Main LLM-OS orchestration class.
 
     Integrates:
-    - LLM providers (Ollama, Claude, OpenAI)
+    - LLM providers (Ollama, Groq)
     - MCP servers (filesystem, applications, process, system, git)
     - Context management
     - Tool execution
@@ -175,6 +159,7 @@ class LLMOS:
             default_provider=self.config.default_provider,
             local_first=True,
             cost_optimization=True,
+            groq_api_key=self.system_config.groq.api_key,
         )
         self._llm_router = LLMRouter(config=router_config)
         await self._llm_router.initialize()
@@ -195,7 +180,8 @@ class LLMOS:
             config=orchestrator_config,
             confirmation_handler=self._handle_confirmation,
         )
-        self._mcp_orchestrator.register_builtin_servers()
+        # Skip builtin servers - using only filesystem MCP
+        # self._mcp_orchestrator.register_builtin_servers()
         await self._mcp_orchestrator.initialize()
 
         # Initialize context manager
@@ -228,8 +214,10 @@ class LLMOS:
 
     def _build_system_prompt(self) -> str:
         """Build the system prompt with current context."""
+        import platform
         cwd = Path.cwd()
-        return DEFAULT_SYSTEM_PROMPT.format(cwd=cwd)
+        os_name = platform.system()
+        return DEFAULT_SYSTEM_PROMPT.format(cwd=cwd, os_name=os_name)
 
     async def process_message(
         self,

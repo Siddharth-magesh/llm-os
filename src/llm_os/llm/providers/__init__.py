@@ -5,11 +5,9 @@ This package contains implementations for various LLM providers.
 """
 
 from llm_os.llm.providers.ollama import OllamaProvider
-from llm_os.llm.providers.anthropic import AnthropicProvider
-from llm_os.llm.providers.openai import OpenAIProvider
+from llm_os.llm.providers.groq import GroqProvider
 
 __all__ = [
     "OllamaProvider",
-    "AnthropicProvider",
-    "OpenAIProvider",
+    "GroqProvider",
 ]

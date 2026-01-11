@@ -27,7 +27,8 @@ from llm_os.mcp.types.server import (
     TransportType,
     PermissionLevel,
 )
-from llm_os.mcp.servers.base import BaseMCPServer, RegisteredTool
+# Internal servers temporarily archived - using external servers only for now
+# from llm_os.mcp._archived_servers.base import BaseMCPServer, RegisteredTool
 from llm_os.mcp.orchestrator import (
     MCPOrchestrator,
     OrchestratorConfig,
@@ -66,9 +67,9 @@ __all__ = [
     "ServerInfo",
     "TransportType",
     "PermissionLevel",
-    # Server Base
-    "BaseMCPServer",
-    "RegisteredTool",
+    # Server Base (temporarily disabled - using external servers only)
+    # "BaseMCPServer",
+    # "RegisteredTool",
     # Orchestration
     "MCPOrchestrator",
     "OrchestratorConfig",

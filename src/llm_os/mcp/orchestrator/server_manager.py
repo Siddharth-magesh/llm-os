@@ -11,9 +11,12 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Type
+from typing import Any, Type, TYPE_CHECKING
 
-from llm_os.mcp.servers.base import BaseMCPServer
+# Temporarily using external servers only
+# from llm_os.mcp._archived_servers.base import BaseMCPServer
+if TYPE_CHECKING:
+    from llm_os.mcp._archived_servers.base import BaseMCPServer
 from llm_os.mcp.types.server import (
     ServerConfig,
     ServerStatus,
