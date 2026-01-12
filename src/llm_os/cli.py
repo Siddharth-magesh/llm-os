@@ -323,7 +323,7 @@ def main() -> int:
 
     # Initialize LLM-OS logging system
     from llm_os.utils.logging import setup_logging as setup_llmos_logging
-    log_dir = Path.home() / ".llm_os" / "logs"
+    log_dir = Path.home() / ".llm-os" / "logs"
     setup_llmos_logging(log_dir)
 
     # Run async main

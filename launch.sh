@@ -8,7 +8,7 @@ echo "===================================="
 echo ""
 
 # Set Groq API Key
-export GROQ_API_KEY=""
+export GROQ_API_KEY="your_groq_api_key_here"
 
 # Check if we're in the right directory
 if [ ! -d "src/llm_os" ]; then

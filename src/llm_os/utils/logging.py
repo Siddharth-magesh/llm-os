@@ -31,7 +31,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 # Default log directory
-DEFAULT_LOG_DIR = Path.home() / ".llm_os" / "logs"
+DEFAULT_LOG_DIR = Path.home() / ".llm-os" / "logs"
 
 # Log file names for each category
 LOG_FILES = {

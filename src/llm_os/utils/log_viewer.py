@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 # Default log directory
-DEFAULT_LOG_DIR = Path.home() / ".llm_os" / "logs"
+DEFAULT_LOG_DIR = Path.home() / ".llm-os" / "logs"
 
 # ANSI color codes for output
 COLORS = {

@@ -188,7 +188,7 @@ class LLMOS:
         # Initialize context manager
         history_path = self.config.history_path
         if history_path is None and self.config.persist_history:
-            history_path = Path.home() / ".llm_os" / "history.json"
+            history_path = Path.home() / ".llm-os" / "history.json"
 
         self._context_manager = ContextManager(
             max_tokens=self.config.max_context_tokens,
@@ -431,36 +431,76 @@ class LLMOS:
         Yields:
             Response chunks as they arrive
         """
-        if not self._initialized:
-            await self.initialize()
+        import time
+        start_time = time.time()
+        tool_names = []
 
-        # Add user message to context
-        self._context_manager.add_user_message(user_input)
+        try:
+            if not self._initialized:
+                await self.initialize()
 
-        # Get messages for LLM
-        messages = self._context_manager.get_messages_for_llm()
+            # Add user message to context
+            self._context_manager.add_user_message(user_input)
 
-        # Get available tools
-        tools = self._mcp_orchestrator.get_tools_for_llm()
+            # Get messages for LLM
+            messages = self._context_manager.get_messages_for_llm()
 
-        # Classify task
-        classification = self._llm_router.classify_task(user_input)
+            # Get available tools
+            tools = self._mcp_orchestrator.get_tools_for_llm()
 
-        # Stream response
-        full_response = ""
-        async for chunk in self._llm_router.stream(
-            messages=messages,
-            tools=tools if tools else None,
-            task_type=classification.task_type,
-            max_tokens=self.config.max_tokens,
-            temperature=self.config.temperature,
-        ):
-            if chunk.content:
-                full_response += chunk.content
-                yield chunk.content
+            # Classify task
+            classification = self._llm_router.classify_task(user_input)
 
-        # Add to context
-        self._context_manager.add_assistant_message(full_response)
+            # Stream response
+            full_response = ""
+            async for chunk in self._llm_router.stream(
+                messages=messages,
+                tools=tools if tools else None,
+                task_type=classification.task_type,
+                max_tokens=self.config.max_tokens,
+                temperature=self.config.temperature,
+            ):
+                if chunk.content:
+                    full_response += chunk.content
+                    yield chunk.content
+
+            # Add to context
+            self._context_manager.add_assistant_message(full_response)
+
+            # Log user interaction
+            duration_ms = (time.time() - start_time) * 1000
+            try:
+                from llm_os.utils.logging import get_logger
+                user_logger = get_logger("user")
+                user_logger.log_interaction(
+                    user_input=user_input,
+                    response=full_response,
+                    tool_calls=tool_names,
+                    success=True,
+                    duration_ms=duration_ms,
+                )
+            except Exception as e:
+                logger.warning(f"Failed to log user interaction: {e}")
+
+        except Exception as e:
+            # Log failed interaction
+            duration_ms = (time.time() - start_time) * 1000
+            try:
+                from llm_os.utils.logging import get_logger
+                user_logger = get_logger("user")
+                user_logger.log_interaction(
+                    user_input=user_input,
+                    response="",
+                    tool_calls=tool_names,
+                    success=False,
+                    error=str(e),
+                    duration_ms=duration_ms,
+                )
+            except Exception as log_error:
+                logger.warning(f"Failed to log failed interaction: {log_error}")
+
+            # Re-raise the original exception
+            raise
 
     def set_tool_callback(
         self,
