@@ -29,15 +29,18 @@ Option 1 - TUI Command (Live):
   Launch TUI, then type:
   /provider groq
   /provider ollama
+  /provider openrouter
 
 Option 2 - Command Line (Session):
   python -m llm_os --provider groq
   python -m llm_os --provider ollama
+  python -m llm_os --provider openrouter
 
 Option 3 - Edit .env (Permanent):
   File: .env
   Change: LLM_OS_PROVIDER=groq
   or:     LLM_OS_PROVIDER=ollama
+  or:     LLM_OS_PROVIDER=openrouter
 
 ====================================
 PROVIDERS:
@@ -47,11 +50,21 @@ Groq (Cloud):
   - Model: llama-3.3-70b-versatile
   - Speed: ~100-200ms latency
   - Status: WORKING ✓
+  - API Key: Required
+
+OpenRouter (Cloud):
+  - Model: google/gemini-2.0-flash-exp:free
+  - Speed: ~200-500ms latency
+  - Status: WORKING ✓
+  - API Key: Free tier available
+  - Access: 400+ models from multiple providers
+  - Get key: https://openrouter.ai/keys
 
 Ollama (Local):
   - Model: llama3.2:3b
   - Speed: Depends on hardware
   - Status: Available (if installed)
+  - API Key: None (local)
 
 ====================================
 FEATURES:
@@ -112,11 +125,13 @@ Configuration files:
     providers/
       groq.py             Groq provider config
       ollama.py           Ollama provider config
+      openrouter.py       OpenRouter provider config
 
 Environment variables (.env):
   GROQ_API_KEY          Your Groq API key
+  OPENROUTER_API_KEY    Your OpenRouter API key (free tier available)
   OLLAMA_BASE_URL       Ollama server URL
-  LLM_OS_PROVIDER       Default provider
+  LLM_OS_PROVIDER       Default provider (groq/ollama/openrouter)
 
 ====================================
 FILES:

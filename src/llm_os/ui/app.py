@@ -258,7 +258,7 @@ class NLShellApp(App):
   /clear    - Clear screen
   /status   - Show system status
   /config   - Show configuration
-  /provider <name> - Switch provider (groq/ollama)
+  /provider <name> - Switch provider (groq/ollama/openrouter)
   /model <name>    - Switch model
   /quit     - Exit OSSARTH
 
@@ -361,6 +361,11 @@ Shortcuts: Ctrl+C/D=Quit | Ctrl+L=Clear"""
     Model: {config.groq.default_model}
     API Key: {'***' + config.groq.api_key[-8:] if config.groq.api_key else 'Not set'}
 
+  OpenRouter:
+    Enabled: {config.openrouter.enabled}
+    Model: {config.openrouter.default_model}
+    API Key: {'***' + config.openrouter.api_key[-8:] if config.openrouter.api_key else 'Not set'}
+
   Ollama:
     Enabled: {config.ollama.enabled}
     Model: {config.ollama.default_model}
@@ -388,9 +393,9 @@ Shortcuts: Ctrl+C/D=Quit | Ctrl+L=Clear"""
             return
 
         provider_name = provider_name.lower()
-        if provider_name not in ["groq", "ollama"]:
+        if provider_name not in ["groq", "ollama", "openrouter"]:
             output.add_line(f"Invalid provider: {provider_name}", "error")
-            output.add_line("Available providers: groq, ollama", "system")
+            output.add_line("Available providers: groq, ollama, openrouter", "system")
             return
 
         try:
@@ -435,6 +440,8 @@ Shortcuts: Ctrl+C/D=Quit | Ctrl+L=Clear"""
                 config.groq.default_model = model_name
             elif provider == "ollama":
                 config.ollama.default_model = model_name
+            elif provider == "openrouter":
+                config.openrouter.default_model = model_name
 
             # Save config
             save_config(config)

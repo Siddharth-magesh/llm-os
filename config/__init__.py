@@ -26,6 +26,7 @@ if env_path.exists():
 from config.llm_config import LLMProviderConfig
 from config.providers.ollama import OllamaConfig
 from config.providers.groq import GroqConfig
+from config.providers.openrouter import OpenRouterConfig
 from config.mcp_config import MCPConfig, ExternalServerConfig
 from config.security_config import SecurityConfig
 from config.ui_config import UIConfig
@@ -43,9 +44,10 @@ DEFAULT_CONFIG_PATHS = [
 @dataclass
 class Config:
     """Main LLM-OS configuration."""
-    # LLM providers (Ollama + Groq only)
+    # LLM providers
     ollama: OllamaConfig = field(default_factory=OllamaConfig)
     groq: GroqConfig = field(default_factory=GroqConfig)
+    openrouter: OpenRouterConfig = field(default_factory=OpenRouterConfig)
 
     # Default provider (from environment or fallback)
     default_provider: str = field(default_factory=lambda: os.environ.get("LLM_OS_PROVIDER", "groq"))
@@ -81,6 +83,11 @@ class Config:
                 "api_key": self.groq.api_key,
                 "default_model": self.groq.default_model,
             },
+            "openrouter": {
+                "enabled": self.openrouter.enabled,
+                "api_key": self.openrouter.api_key,
+                "default_model": self.openrouter.default_model,
+            },
             "mcp": self.mcp.to_dict(),
             "security": self.security.to_dict(),
             "ui": self.ui.to_dict(),
@@ -105,6 +112,12 @@ class Config:
             config.groq.enabled = groq_data.get("enabled", True)
             config.groq.api_key = groq_data.get("api_key", "")
             config.groq.default_model = groq_data.get("default_model", config.groq.default_model)
+
+        if "openrouter" in data:
+            openrouter_data = data["openrouter"]
+            config.openrouter.enabled = openrouter_data.get("enabled", True)
+            config.openrouter.api_key = openrouter_data.get("api_key", "")
+            config.openrouter.default_model = openrouter_data.get("default_model", config.openrouter.default_model)
 
         # Update other configs
         config.default_provider = data.get("default_provider", config.default_provider)
@@ -222,6 +235,7 @@ __all__ = [
     "LLMProviderConfig",
     "OllamaConfig",
     "GroqConfig",
+    "OpenRouterConfig",
     "MCPConfig",
     "ExternalServerConfig",
     "SecurityConfig",

@@ -160,6 +160,7 @@ class LLMOS:
             local_first=True,
             cost_optimization=True,
             groq_api_key=self.system_config.groq.api_key,
+            openrouter_api_key=self.system_config.openrouter.api_key,
         )
         self._llm_router = LLMRouter(config=router_config)
         await self._llm_router.initialize()

@@ -79,7 +79,7 @@ For more information, visit: https://github.com/llm-os/llm-os
     parser.add_argument(
         "-p", "--provider",
         type=str,
-        choices=["ollama", "groq"],
+        choices=["ollama", "groq", "openrouter"],
         help="LLM provider to use",
     )
 

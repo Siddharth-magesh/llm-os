@@ -27,6 +27,7 @@ from llm_os.llm.base import (
 from llm_os.llm.classifier import TaskClassifier, TaskType, ClassificationResult
 from llm_os.llm.providers.ollama import OllamaProvider
 from llm_os.llm.providers.groq import GroqProvider
+from llm_os.llm.providers.openrouter import OpenRouterProvider
 
 
 logger = logging.getLogger(__name__)
@@ -36,13 +37,14 @@ logger = logging.getLogger(__name__)
 class RouterConfig:
     """Configuration for the LLM router."""
     default_provider: str = "ollama"
-    fallback_chain: list[str] = field(default_factory=lambda: ["ollama", "groq"])
+    fallback_chain: list[str] = field(default_factory=lambda: ["ollama", "groq", "openrouter"])
     local_first: bool = True
     cost_optimization: bool = True
     max_retries: int = 3
     retry_delay: float = 1.0
     timeout: float = 120.0
     groq_api_key: str | None = None
+    openrouter_api_key: str | None = None
 
 
 @dataclass
@@ -115,10 +117,20 @@ class LLMRouter:
             except Exception as e:
                 logger.warning(f"Failed to initialize Groq: {e}")
 
+        # Initialize OpenRouter (cloud - 400+ models)
+        openrouter_key = self.config.openrouter_api_key or os.environ.get("OPENROUTER_API_KEY")
+        if "openrouter" not in self._providers and openrouter_key:
+            try:
+                openrouter = OpenRouterProvider(api_key=openrouter_key)
+                self._providers["openrouter"] = openrouter
+                logger.info("OpenRouter provider initialized")
+            except Exception as e:
+                logger.warning(f"Failed to initialize OpenRouter: {e}")
+
         self._initialized = True
 
         if not self._providers:
-            logger.error("No LLM providers available! Install Ollama or set GROQ_API_KEY")
+            logger.error("No LLM providers available! Install Ollama or set GROQ_API_KEY/OPENROUTER_API_KEY")
         else:
             logger.info(f"Initialized providers: {', '.join(self._providers.keys())}")
 
