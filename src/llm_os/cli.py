@@ -321,6 +321,11 @@ def main() -> int:
     log_level = log_levels.get(args.verbose, "DEBUG")
     setup_logging(level=log_level, log_file=args.log_file)
 
+    # Initialize LLM-OS logging system
+    from llm_os.utils.logging import setup_logging as setup_llmos_logging
+    log_dir = Path.home() / ".llm_os" / "logs"
+    setup_llmos_logging(log_dir)
+
     # Run async main
     return asyncio.run(async_main(args))
 

@@ -235,55 +235,112 @@ class LLMOS:
         Returns:
             The assistant's response
         """
-        if not self._initialized:
-            await self.initialize()
+        import time
+        start_time = time.time()
+        tool_names = []
 
-        # Add user message to context
-        self._context_manager.add_user_message(user_input)
+        try:
+            if not self._initialized:
+                await self.initialize()
 
-        # Resolve references in user input
-        resolved_input = self._context_manager.resolve_references(user_input)
+            # Add user message to context
+            self._context_manager.add_user_message(user_input)
 
-        # Get messages for LLM
-        messages = self._context_manager.get_messages_for_llm()
+            # Resolve references in user input
+            resolved_input = self._context_manager.resolve_references(user_input)
 
-        # Get available tools
-        tools = self._mcp_orchestrator.get_tools_for_llm()
+            # Get messages for LLM
+            messages = self._context_manager.get_messages_for_llm()
 
-        # Classify task for routing
-        classification = self._llm_router.classify_task(user_input)
-        task_type = classification.task_type
+            # Get available tools
+            tools = self._mcp_orchestrator.get_tools_for_llm()
 
-        logger.debug(f"Task classified as: {task_type.value}")
+            # Classify task for routing
+            classification = self._llm_router.classify_task(user_input)
+            task_type = classification.task_type
 
-        # Get response from LLM
-        response = await self._llm_router.complete(
-            messages=messages,
-            tools=tools if tools else None,
-            task_type=task_type,
-            max_tokens=self.config.max_tokens,
-            temperature=self.config.temperature,
-        )
+            logger.debug(f"Task classified as: {task_type.value}")
 
-        # Track provider and model used
-        self._current_provider = response.provider
-        self._current_model = response.model
-
-        # Handle tool calls if present
-        if response.tool_calls:
-            response_text = await self._execute_tool_calls(
-                response.tool_calls,
-                messages,
-                tools,
-                task_type,
+            # Get response from LLM
+            response = await self._llm_router.complete(
+                messages=messages,
+                tools=tools if tools else None,
+                task_type=task_type,
+                max_tokens=self.config.max_tokens,
+                temperature=self.config.temperature,
             )
-        else:
-            response_text = response.content
 
-        # Add assistant response to context
-        self._context_manager.add_assistant_message(response_text)
+            # Track provider and model used
+            self._current_provider = response.provider
+            self._current_model = response.model
 
-        return response_text
+            # Log LLM call
+            try:
+                from llm_os.utils.logging import get_logger
+                llm_logger = get_logger("llm")
+                llm_logger.log_call(
+                    provider=response.provider,
+                    model=response.model,
+                    prompt_tokens=getattr(response, 'prompt_tokens', 0),
+                    completion_tokens=getattr(response, 'completion_tokens', 0),
+                    duration_ms=(time.time() - start_time) * 1000,
+                    success=True,
+                    streaming=stream,
+                )
+            except Exception as e:
+                logger.warning(f"Failed to log LLM call: {e}")
+
+            # Handle tool calls if present
+            if response.tool_calls:
+                tool_names = [tc.name for tc in response.tool_calls]
+                response_text = await self._execute_tool_calls(
+                    response.tool_calls,
+                    messages,
+                    tools,
+                    task_type,
+                )
+            else:
+                response_text = response.content
+
+            # Add assistant response to context
+            self._context_manager.add_assistant_message(response_text)
+
+            # Log user interaction
+            duration_ms = (time.time() - start_time) * 1000
+            try:
+                from llm_os.utils.logging import get_logger
+                user_logger = get_logger("user")
+                user_logger.log_interaction(
+                    user_input=user_input,
+                    response=response_text,
+                    tool_calls=tool_names,
+                    success=True,
+                    duration_ms=duration_ms,
+                )
+            except Exception as e:
+                logger.warning(f"Failed to log user interaction: {e}")
+
+            return response_text
+
+        except Exception as e:
+            # Log failed interaction
+            duration_ms = (time.time() - start_time) * 1000
+            try:
+                from llm_os.utils.logging import get_logger
+                user_logger = get_logger("user")
+                user_logger.log_interaction(
+                    user_input=user_input,
+                    response="",
+                    tool_calls=tool_names,
+                    success=False,
+                    error=str(e),
+                    duration_ms=duration_ms,
+                )
+            except Exception as log_error:
+                logger.warning(f"Failed to log failed interaction: {log_error}")
+
+            # Re-raise the original exception
+            raise
 
     async def _execute_tool_calls(
         self,
