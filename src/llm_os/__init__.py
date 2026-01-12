@@ -8,7 +8,7 @@ enabling users to control their computer using natural language commands.
 __version__ = "0.1.0"
 __author__ = "LLM-OS Team"
 
-from llm_os.config import Config, get_config, load_config
+from config import Config, get_config, load_config
 from llm_os.core import LLMOS, LLMOSConfig, create_llmos
 
 __all__ = [

@@ -38,8 +38,26 @@ if errorlevel 1 (
 )
 
 echo.
+echo Test 4: CLI Bypass
+python tests\cli\test_bypass.py
+if errorlevel 1 (
+    echo FAILED
+    pause
+    exit /b 1
+)
+
+echo.
+echo Test 5: Dynamic Configuration
+python tests\config\test_dynamic_config.py
+if errorlevel 1 (
+    echo FAILED
+    pause
+    exit /b 1
+)
+
+echo.
 echo ====================================
-echo ALL TESTS PASSED
+echo ALL TESTS PASSED (5/5)
 echo ====================================
 pause
 

@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, AsyncIterator
 
-from llm_os.config import Config, get_config
+from config import Config, get_config
 from llm_os.llm.base import Message, ToolCall
 from llm_os.llm.router import LLMRouter, RouterConfig
 from llm_os.llm.context import ContextManager
@@ -79,7 +79,7 @@ When users ask questions:
 class LLMOSConfig:
     """Configuration for LLM-OS."""
     # LLM settings
-    default_provider: str = "groq"
+    default_provider: str = "ollama"
     default_model: str | None = None
     temperature: float = 0.7
     max_tokens: int = 4096

@@ -25,15 +25,19 @@ Quick check:
 CHANGING PROVIDER:
 ====================================
 
-Option 1 - Command Line (Temporary):
+Option 1 - TUI Command (Live):
+  Launch TUI, then type:
+  /provider groq
+  /provider ollama
+
+Option 2 - Command Line (Session):
   python -m llm_os --provider groq
   python -m llm_os --provider ollama
 
-Option 2 - Edit Default (Permanent):
-  File: src\llm_os\core.py
-  Line 82: default_provider: str = "ollama"
-
-  Change to: default_provider: str = "groq"
+Option 3 - Edit .env (Permanent):
+  File: .env
+  Change: LLM_OS_PROVIDER=groq
+  or:     LLM_OS_PROVIDER=ollama
 
 ====================================
 PROVIDERS:
@@ -59,16 +63,34 @@ FEATURES:
 ✓ Directory operations
 ✓ File search
 ✓ Provider selection
+✓ CLI Bypass (execute shell commands)
+✓ Dynamic configuration (TUI commands)
+✓ Modular config system (.env support)
 
 ====================================
 USAGE:
 ====================================
 
-Commands:
+Natural Language Commands:
   "list all files"
   "read QUICK_START.txt"
   "create a folder called test"
   "search for .py files"
+
+CLI Bypass (! prefix):
+  !dir                List files (Windows)
+  !ls -la             List files (Linux)
+  !git status         Check git status
+  !python --version   Check Python version
+
+TUI Commands:
+  /help               Show help
+  /config             Show configuration
+  /provider groq      Switch to Groq
+  /provider ollama    Switch to Ollama
+  /model <name>       Switch model
+  /clear              Clear screen
+  /quit               Exit
 
 CLI options:
   --provider groq     Use Groq
@@ -77,11 +99,33 @@ CLI options:
   -c "command"        Single command
 
 ====================================
+CONFIGURATION:
+====================================
+
+Configuration files:
+  .env                    API keys and secrets
+  config/                 Modular configuration
+    llm_config.py         Base LLM config
+    mcp_config.py         MCP server config
+    security_config.py    Security settings
+    ui_config.py          UI preferences
+    providers/
+      groq.py             Groq provider config
+      ollama.py           Ollama provider config
+
+Environment variables (.env):
+  GROQ_API_KEY          Your Groq API key
+  OLLAMA_BASE_URL       Ollama server URL
+  LLM_OS_PROVIDER       Default provider
+
+====================================
 FILES:
 ====================================
 
 launch.bat          Main launcher
 verify.bat          Quick test
-tests/integration/  Test scripts
+tests/integration/  Integration tests
+tests/cli/          CLI bypass tests
+tests/config/       Configuration tests
 
 ====================================

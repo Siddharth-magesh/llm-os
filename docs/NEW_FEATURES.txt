@@ -1,0 +1,237 @@
+====================================
+  LLM-OS NEW FEATURES
+====================================
+
+This document describes the new features implemented:
+1. CLI Bypass
+2. Dynamic Configuration System
+3. Modular Config Structure
+
+====================================
+1. CLI BYPASS FEATURE
+====================================
+
+What it does:
+  Allows you to execute shell commands directly from the TUI
+  without sending them to the LLM.
+
+How to use:
+  Prefix any command with ! symbol
+  
+Examples:
+  !dir                  # List files (Windows)
+  !ls -la               # List files (Linux)
+  !git status           # Check git status
+  !python --version     # Check Python version
+  !echo Hello World     # Echo text
+  !npm install          # Run npm commands
+  !cd .. && dir         # Chain commands
+
+Why it's useful:
+  - Fast execution (no LLM processing)
+  - Direct terminal access
+  - Perfect for quick checks
+  - No API calls = No cost
+
+Implementation:
+  - File: src\llm_os\ui\app.py
+  - Method: _handle_cli_command()
+  - Uses: asyncio.create_subprocess_shell()
+
+====================================
+2. DYNAMIC CONFIGURATION
+====================================
+
+What it does:
+  Allows changing configuration on-the-fly from TUI
+  without restarting or editing files.
+
+TUI Commands:
+  /config               Show current configuration
+  /provider groq        Switch to Groq provider
+  /provider ollama      Switch to Ollama provider
+  /model <name>         Switch to different model
+  
+Examples:
+  /config
+  /provider groq
+  /model llama-3.1-8b-instant
+
+Features:
+  - Live provider switching
+  - Live model switching
+  - Configuration persistence (saved to ~/.llm-os/config.yaml)
+  - Shows current config values
+  - Validates provider names
+
+Implementation:
+  - File: src\llm_os\ui\app.py
+  - Methods: _show_config(), _switch_provider(), _switch_model()
+  - Uses: config module for load/save
+
+====================================
+3. MODULAR CONFIG STRUCTURE
+====================================
+
+What changed:
+  Moved from single config.py to modular config/ folder
+  Separated secrets to .env file
+  No hardcoded values
+
+Old structure:
+  src/llm_os/config.py    (500+ lines, everything mixed)
+
+New structure:
+  config/
+    __init__.py           Main Config class, load/save functions
+    llm_config.py         Base LLM provider configuration
+    mcp_config.py         MCP server configuration
+    security_config.py    Security settings
+    ui_config.py          UI preferences
+    providers/
+      __init__.py
+      ollama.py           Ollama-specific config
+      groq.py             Groq-specific config
+  .env                    API keys and secrets
+
+Benefits:
+  - Easy to find and edit specific configs
+  - Secrets separated from code
+  - More maintainable
+  - Environment variable support
+  - Easy to add new providers
+
+Environment Variables (.env):
+  GROQ_API_KEY=your_key_here
+  OLLAMA_BASE_URL=http://localhost:11434
+  OLLAMA_MODEL=qwen2.5:7b
+  LLM_OS_PROVIDER=groq
+
+How to use:
+  1. Edit .env for secrets
+  2. Edit config/*.py for settings
+  3. Use /config command in TUI to view
+  4. Use /provider and /model to switch
+
+====================================
+TESTING
+====================================
+
+New test structure:
+  tests/
+    integration/       Integration tests (3 tests)
+    cli/               CLI bypass tests (1 test)
+    config/            Config tests (1 test)
+
+Run tests:
+  tests\run_tests.bat              # Run all 5 tests
+  tests\cli\run_cli_tests.bat      # Run CLI tests only
+  tests\config\run_config_tests.bat # Run config tests only
+
+Test Results:
+  Test 1: Groq Provider        ✓ PASS
+  Test 2: Provider Config      ✓ PASS
+  Test 3: Integration          ✓ PASS
+  Test 4: CLI Bypass           ✓ PASS
+  Test 5: Dynamic Config       ✓ PASS
+
+====================================
+MIGRATION NOTES
+====================================
+
+What you need to know:
+  1. .env file created with your GROQ_API_KEY
+  2. All imports updated (from llm_os.config → from config)
+  3. Old config.py still in src/llm_os/ (can be deleted)
+  4. New config/ folder at project root
+  5. All tests passing with new structure
+
+Breaking changes:
+  None - backward compatible imports maintained
+
+Configuration now read from:
+  1. .env file (highest priority for secrets)
+  2. Environment variables (override .env)
+  3. config/ folder (defaults and structure)
+  4. ~/.llm-os/config.yaml (saved settings)
+
+====================================
+USAGE EXAMPLES
+====================================
+
+Example 1: Quick file check with CLI bypass
+  Launch: launch.bat
+  Type: !dir
+  Result: Direct directory listing (no LLM)
+
+Example 2: Check and switch provider
+  Type: /config
+  See: Current provider (groq)
+  Type: /provider ollama
+  Result: Switched to Ollama
+
+Example 3: Change model on the fly
+  Type: /model llama-3.1-8b-instant
+  Result: Using faster model
+
+Example 4: Natural language + CLI bypass
+  Type: "list all python files"
+  Then: !git status
+  Then: "commit these changes"
+  Result: Mix of LLM and direct commands
+
+Example 5: Edit configuration
+  Edit: .env
+  Change: LLM_OS_PROVIDER=ollama
+  Restart: launch.bat
+  Result: Now using Ollama by default
+
+====================================
+TECHNICAL DETAILS
+====================================
+
+Files Modified:
+  ✓ src/llm_os/ui/app.py         Added CLI bypass and config commands
+  ✓ src/llm_os/cli.py             Pass LLMOS instance to app
+  ✓ src/llm_os/core.py            Updated import from config
+  ✓ src/llm_os/__init__.py        Updated import from config
+  ✓ tests/integration/*.py        Updated imports, added sys.path
+
+Files Created:
+  ✓ .env                          Environment variables
+  ✓ config/__init__.py            Main config module
+  ✓ config/llm_config.py          LLM base config
+  ✓ config/mcp_config.py          MCP config
+  ✓ config/security_config.py     Security config
+  ✓ config/ui_config.py           UI config
+  ✓ config/providers/__init__.py  Providers package
+  ✓ config/providers/ollama.py    Ollama config
+  ✓ config/providers/groq.py      Groq config
+  ✓ tests/cli/test_bypass.py      CLI bypass test
+  ✓ tests/config/test_dynamic_config.py  Config test
+
+Lines of Code:
+  CLI Bypass:         ~40 lines
+  Dynamic Config:     ~120 lines
+  Modular Config:     ~350 lines
+  Tests:              ~150 lines
+  Total:              ~660 lines added
+
+====================================
+NEXT STEPS
+====================================
+
+Recommended actions:
+  1. Test CLI bypass: launch.bat, then !dir
+  2. Test config switch: /provider ollama
+  3. Customize .env with your settings
+  4. Run full test suite: tests\run_tests.bat
+  5. Delete old config: src\llm_os\config.py (optional)
+
+Optional enhancements:
+  - Add more providers to config/providers/
+  - Add custom MCP servers to config
+  - Customize security settings
+  - Add more TUI commands as needed
+
+====================================

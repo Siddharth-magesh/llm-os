@@ -4,12 +4,14 @@ import sys
 import os
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+# Add both src and root to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 os.environ["GROQ_API_KEY"] = "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"
 
 async def test_integration():
     from llm_os.core import LLMOS, LLMOSConfig
-    from llm_os.config import Config
+    from config import Config
 
     print("=" * 60)
     print("INTEGRATION TEST - GROQ + FILESYSTEM MCP")

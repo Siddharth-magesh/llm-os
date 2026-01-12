@@ -3,7 +3,9 @@ OSSARTH Terminal UI - Redesigned based on Claude Code style
 """
 from __future__ import annotations
 
+import asyncio
 import platform
+import subprocess
 from typing import Any, Callable, Coroutine
 from rich.console import RenderableType
 from rich.text import Text
@@ -164,6 +166,7 @@ class NLShellApp(App):
         stream_handler: Any | None = None,
         provider: str = "Unknown",
         model: str = "Unknown",
+        llmos_instance: Any | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize OSSARTH."""
@@ -173,6 +176,7 @@ class NLShellApp(App):
         self._processing = False
         self._provider = provider
         self._model = model
+        self._llmos = llmos_instance
 
     def compose(self) -> ComposeResult:
         """Create UI components."""
@@ -204,7 +208,12 @@ class NLShellApp(App):
         output = self.query_one("#output", OutputArea)
         output.add_line(message, "user")
 
-        # Handle commands
+        # Handle CLI bypass (commands starting with !)
+        if message.startswith("!"):
+            await self._handle_cli_command(message[1:].strip())
+            return
+
+        # Handle slash commands
         if message.startswith("/"):
             await self._handle_command(message)
             return
@@ -245,14 +254,21 @@ class NLShellApp(App):
 
         if cmd_lower in ("/help", "/h"):
             help_text = """Available Commands:
-  /help   - Show this help
-  /clear  - Clear screen
-  /status - Show system status
-  /quit   - Exit OSSARTH
+  /help     - Show this help
+  /clear    - Clear screen
+  /status   - Show system status
+  /config   - Show configuration
+  /provider <name> - Switch provider (groq/ollama)
+  /model <name>    - Switch model
+  /quit     - Exit OSSARTH
+
+CLI Bypass:
+  !<command> - Execute shell command directly
+  Examples: !dir | !ls -la | !git status | !python --version
 
 Natural Language:
   Just type what you want to do:
-  "list files" | "show system info" | "git status"
+  "list files" | "show system info" | "read file.txt"
 
 Shortcuts: Ctrl+C/D=Quit | Ctrl+L=Clear"""
             output.add_line(help_text, "system")
@@ -269,6 +285,17 @@ Shortcuts: Ctrl+C/D=Quit | Ctrl+L=Clear"""
   Platform: {platform.system()} {platform.release()}"""
             output.add_line(status, "system")
 
+        elif cmd_lower in ("/config", "/cfg"):
+            await self._show_config()
+
+        elif cmd_lower.startswith("/provider "):
+            provider_name = cmd[10:].strip()
+            await self._switch_provider(provider_name)
+
+        elif cmd_lower.startswith("/model "):
+            model_name = cmd[7:].strip()
+            await self._switch_model(model_name)
+
         elif cmd_lower in ("/quit", "/exit", "/q"):
             self.exit()
 
@@ -277,6 +304,153 @@ Shortcuts: Ctrl+C/D=Quit | Ctrl+L=Clear"""
             output.add_line("Type /help for available commands.", "system")
 
         output.add_line("", "system")
+
+    async def _handle_cli_command(self, cmd: str) -> None:
+        """Handle CLI bypass commands (starting with !)."""
+        output = self.query_one("#output", OutputArea)
+
+        if not cmd:
+            output.add_line("No command specified.", "error")
+            output.add_line("", "system")
+            return
+
+        try:
+            # Execute command using subprocess
+            # Use shell=True for Windows compatibility
+            process = await asyncio.create_subprocess_shell(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                shell=True,
+            )
+
+            stdout, stderr = await process.communicate()
+
+            # Display output
+            if stdout:
+                output.add_line(stdout.decode("utf-8", errors="replace"), "system")
+            if stderr:
+                output.add_line(stderr.decode("utf-8", errors="replace"), "error")
+
+            # Show return code if non-zero
+            if process.returncode != 0:
+                output.add_line(f"Exit code: {process.returncode}", "error")
+
+        except Exception as e:
+            output.add_line(f"Command failed: {str(e)}", "error")
+
+        output.add_line("", "system")
+
+    async def _show_config(self) -> None:
+        """Show current configuration."""
+        output = self.query_one("#output", OutputArea)
+
+        if not self._llmos:
+            output.add_line("Configuration not available.", "error")
+            return
+
+        try:
+            from config import get_config
+            config = get_config()
+
+            config_text = f"""Current Configuration:
+  Provider: {config.default_provider}
+
+  Groq:
+    Enabled: {config.groq.enabled}
+    Model: {config.groq.default_model}
+    API Key: {'***' + config.groq.api_key[-8:] if config.groq.api_key else 'Not set'}
+
+  Ollama:
+    Enabled: {config.ollama.enabled}
+    Model: {config.ollama.default_model}
+    Base URL: {config.ollama.base_url}
+
+  MCP:
+    Auto Start: {config.mcp.auto_start}
+    Servers: {', '.join(config.mcp.enabled_servers)}
+
+  UI:
+    Stream Responses: {config.ui.stream_responses}
+    Show Tool Calls: {config.ui.show_tool_calls}"""
+
+            output.add_line(config_text, "system")
+
+        except Exception as e:
+            output.add_line(f"Error reading config: {str(e)}", "error")
+
+    async def _switch_provider(self, provider_name: str) -> None:
+        """Switch LLM provider."""
+        output = self.query_one("#output", OutputArea)
+
+        if not self._llmos:
+            output.add_line("LLM-OS instance not available.", "error")
+            return
+
+        provider_name = provider_name.lower()
+        if provider_name not in ["groq", "ollama"]:
+            output.add_line(f"Invalid provider: {provider_name}", "error")
+            output.add_line("Available providers: groq, ollama", "system")
+            return
+
+        try:
+            from config import get_config, save_config
+
+            # Update configuration
+            config = get_config()
+            config.default_provider = provider_name
+
+            # Save config
+            save_config(config)
+
+            # Update internal state
+            self._provider = provider_name
+
+            # Update header
+            header = self.query_one(HeaderBar)
+            header.provider = provider_name
+
+            output.add_line(f"Provider switched to: {provider_name}", "system")
+            output.add_line("Restart recommended for changes to take full effect.", "system")
+
+        except Exception as e:
+            output.add_line(f"Error switching provider: {str(e)}", "error")
+
+    async def _switch_model(self, model_name: str) -> None:
+        """Switch LLM model."""
+        output = self.query_one("#output", OutputArea)
+
+        if not self._llmos:
+            output.add_line("LLM-OS instance not available.", "error")
+            return
+
+        try:
+            from config import get_config, save_config
+
+            config = get_config()
+            provider = config.default_provider
+
+            # Update model for current provider
+            if provider == "groq":
+                config.groq.default_model = model_name
+            elif provider == "ollama":
+                config.ollama.default_model = model_name
+
+            # Save config
+            save_config(config)
+
+            # Update internal state
+            self._model = model_name
+
+            # Update header
+            header = self.query_one(HeaderBar)
+            header.model = model_name
+
+            output.add_line(f"Model switched to: {model_name}", "system")
+            output.add_line("Restart recommended for changes to take full effect.", "system")
+
+        except Exception as e:
+            output.add_line(f"Error switching model: {str(e)}", "error")
 
     def action_clear(self) -> None:
         """Clear screen."""
@@ -290,6 +464,7 @@ def run_app(
     stream_handler: Any | None = None,
     provider: str = "Unknown",
     model: str = "Unknown",
+    llmos_instance: Any | None = None,
     **kwargs: Any,
 ) -> None:
     """Run OSSARTH application."""
@@ -298,6 +473,7 @@ def run_app(
         stream_handler=stream_handler,
         provider=provider,
         model=model,
+        llmos_instance=llmos_instance,
         **kwargs
     )
     app.run()

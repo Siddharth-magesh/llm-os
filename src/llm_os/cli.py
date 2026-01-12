@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from llm_os.config import load_config, Config
+from config import load_config, Config
 from llm_os.core import LLMOS, LLMOSConfig
 from llm_os.ui import NLShellApp
 
@@ -251,6 +251,7 @@ async def run_tui(
         stream_handler=stream_handler,
         provider=provider,
         model=model,
+        llmos_instance=llmos,
     )
 
     # Run the app asynchronously
