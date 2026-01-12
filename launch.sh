@@ -1,6 +1,5 @@
 #!/bin/bash
 # LLM-OS Launcher Script for Linux/Mac
-# This script sets up the environment and launches LLM-OS
 
 echo ""
 echo "===================================="
@@ -9,14 +8,7 @@ echo "===================================="
 echo ""
 
 # Set Groq API Key
-export GROQ_API_KEY="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"
-
-# Check if Python is installed
-if ! command -v python3 &> /dev/null; then
-    echo "ERROR: Python 3 is not installed or not in PATH"
-    echo "Please install Python 3.10+ and try again"
-    exit 1
-fi
+export GROQ_API_KEY="groq_test_XXXXXXXXXXXXXXXXXXXXXX"
 
 # Check if we're in the right directory
 if [ ! -d "src/llm_os" ]; then
@@ -25,19 +17,41 @@ if [ ! -d "src/llm_os" ]; then
     exit 1
 fi
 
-# Install dependencies if needed
-if [ ! -d "venv" ]; then
-    echo "Installing dependencies..."
-    python3 -m pip install -e . > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Warning: Installation may have failed"
-    fi
+# Find and initialize conda
+CONDA_FOUND=false
+if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
+    source "$HOME/miniconda3/etc/profile.d/conda.sh"
+    CONDA_FOUND=true
+elif [ -f "$HOME/anaconda3/etc/profile.d/conda.sh" ]; then
+    source "$HOME/anaconda3/etc/profile.d/conda.sh"
+    CONDA_FOUND=true
+elif [ -f "/opt/miniconda3/etc/profile.d/conda.sh" ]; then
+    source "/opt/miniconda3/etc/profile.d/conda.sh"
+    CONDA_FOUND=true
+elif [ -f "/usr/local/miniconda3/etc/profile.d/conda.sh" ]; then
+    source "/usr/local/miniconda3/etc/profile.d/conda.sh"
+    CONDA_FOUND=true
+fi
+
+if [ "$CONDA_FOUND" = false ]; then
+    echo "ERROR: Cannot find conda installation"
+    echo "Please ensure conda/miniconda is installed"
+    exit 1
+fi
+
+# Activate the llm-os environment
+echo "Activating conda environment: llm-os"
+conda activate llm-os
+if [ $? -ne 0 ]; then
+    echo "ERROR: Failed to activate conda environment 'llm-os'"
+    echo "Please ensure it exists: conda create -n llm-os python=3.11"
+    exit 1
 fi
 
 # Launch LLM-OS
 echo "Starting LLM-OS..."
 echo ""
-python3 -m llm_os
+python -m llm_os
 
 # Check exit status
 if [ $? -ne 0 ]; then
