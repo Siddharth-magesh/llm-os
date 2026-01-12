@@ -10,6 +10,7 @@ import json
 import os
 import time
 from typing import Any, AsyncIterator
+from dotenv import load_dotenv
 
 import httpx
 
@@ -48,6 +49,7 @@ class GroqProvider(BaseLLMProvider):
         timeout: float = 120.0,
     ):
         super().__init__(default_model)
+        load_dotenv()
         self.api_key = api_key or os.environ.get("GROQ_API_KEY")
 
         if not self.api_key:

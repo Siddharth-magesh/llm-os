@@ -79,7 +79,7 @@ When users ask questions:
 class LLMOSConfig:
     """Configuration for LLM-OS."""
     # LLM settings
-    default_provider: str = "ollama"
+    default_provider: str = "groq"
     default_model: str | None = None
     temperature: float = 0.7
     max_tokens: int = 4096

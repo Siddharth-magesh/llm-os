@@ -2,17 +2,14 @@
   LLM-OS Quick Start Guide
 ====================================
 
-LAUNCH OPTIONS:
+LAUNCH:
 ====================================
 
-Auto (Groq with Ollama fallback):
+Start LLM-OS:
   launch.bat
 
-Groq only (cloud, fast):
-  launch_groq.bat
-
-Ollama only (local, private):
-  launch_ollama.bat
+This launches with Ollama by default (local, private).
+To use Groq instead (cloud, fast), see CHANGING PROVIDER below.
 
 ====================================
 VERIFY INSTALLATION:
@@ -23,6 +20,20 @@ Run tests:
 
 Quick check:
   verify.bat
+
+====================================
+CHANGING PROVIDER:
+====================================
+
+Option 1 - Command Line (Temporary):
+  python -m llm_os --provider groq
+  python -m llm_os --provider ollama
+
+Option 2 - Edit Default (Permanent):
+  File: src\llm_os\core.py
+  Line 82: default_provider: str = "ollama"
+
+  Change to: default_provider: str = "groq"
 
 ====================================
 PROVIDERS:
@@ -69,10 +80,8 @@ CLI options:
 FILES:
 ====================================
 
-launch.bat          Auto mode
-launch_groq.bat     Groq only
-launch_ollama.bat   Ollama only
+launch.bat          Main launcher
 verify.bat          Quick test
-tests/              Test scripts
+tests/integration/  Test scripts
 
 ====================================
